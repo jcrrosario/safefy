@@ -5,6 +5,7 @@ import '../widgets/primary_button.dart';
 import '../services/master_password_service.dart';
 import '../services/vault_state_service.dart';
 import 'dashboard_page.dart';
+import '../services/vault_lock_service.dart';
 
 class UnlockVaultPage extends StatefulWidget {
   const UnlockVaultPage({super.key});
@@ -41,6 +42,7 @@ class _UnlockVaultPageState extends State<UnlockVaultPage> {
       return;
     }
 
+    VaultLockService.setCurrentMasterPassword(password);
     await VaultStateService.unlockVault();
 
     if (!mounted) return;

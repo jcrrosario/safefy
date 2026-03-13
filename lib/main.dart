@@ -4,6 +4,7 @@ import 'core/app_theme.dart';
 import 'pages/app_entry_page.dart';
 import 'pages/unlock_vault_page.dart';
 import 'services/vault_state_service.dart';
+import 'services/vault_lock_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,7 @@ class _SafeFyAppState extends State<SafeFyApp> with WidgetsBindingObserver {
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       await VaultStateService.lockVault();
+      VaultLockService.clearCurrentMasterPassword();
       _isShowingLockScreen = false;
     }
 
