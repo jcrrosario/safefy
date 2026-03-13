@@ -11,4 +11,8 @@ class AppColors {
   static const Color textPrimary = Color(0xFFF8FAFC);
   static const Color textSecondary = Color(0xFF98A2B3);
   static const Color border = Color(0xFF314158);
+  static const Color error = Color(0xFFEF4444);
+  static const Color successStrong = Color(0xFF22C55E);
+  static const Color warningStrong = Color(0xFFF59E0B);
+  static const Color info = Color(0xFF3B82F6);
 }

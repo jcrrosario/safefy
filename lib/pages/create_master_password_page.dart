@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/app_constants.dart';
 import '../widgets/primary_button.dart';
+import '../services/vault_state_service.dart';
+import 'dashboard_page.dart';
 
 class CreateMasterPasswordPage extends StatefulWidget {
   const CreateMasterPasswordPage({super.key});
@@ -26,7 +28,7 @@ class _CreateMasterPasswordPageState extends State<CreateMasterPasswordPage> {
     super.dispose();
   }
 
-  void _createVault() {
+  void _createVault() async {
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
@@ -45,14 +47,36 @@ class _CreateMasterPasswordPageState extends State<CreateMasterPasswordPage> {
       return;
     }
 
-    _showMessage('Tela pronta. Próximo passo será salvar o cofre.');
+    await VaultStateService.setVaultCreated();
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const DashboardPage(),
+      ),
+    );
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.surfaceLight,
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: isError
+            ? AppColors.error
+            : AppColors.successStrong,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
@@ -120,10 +144,12 @@ class _CreateMasterPasswordPageState extends State<CreateMasterPasswordPage> {
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(
-                      Icons.shield_outlined,
-                      size: 42,
-                      color: AppColors.primaryLight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
