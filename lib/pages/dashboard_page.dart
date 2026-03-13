@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/app_colors.dart';
 import '../db/app_database.dart';
 import '../db/database_provider.dart';
@@ -22,6 +23,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   bool _isLoading = true;
   String _selectedCategory = 'all';
+
+  final Map<int, bool> _visiblePasswords = {};
 
   @override
   void initState() {
@@ -66,12 +69,14 @@ class _DashboardPageState extends State<DashboardPage> {
         final username = (item.username ?? '').toLowerCase();
         final url = (item.url ?? '').toLowerCase();
         final notes = (item.notes ?? '').toLowerCase();
+        final content = (item.content ?? '').toLowerCase();
 
         return title.contains(query) ||
             category.contains(query) ||
             username.contains(query) ||
             url.contains(query) ||
-            notes.contains(query);
+            notes.contains(query) ||
+            content.contains(query);
       }).toList();
     }
 
@@ -90,6 +95,72 @@ class _DashboardPageState extends State<DashboardPage> {
     if (result == true) {
       await _loadItems();
     }
+  }
+
+  Future<void> _deleteItem(VaultItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text(
+            'Excluir item',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            'Tem certeza que deseja excluir "${item.title}"?',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    await _repository.deleteItem(item.id);
+
+    _showMessage('Item excluído com sucesso.', isError: false);
+    await _loadItems();
+  }
+
+  Future<void> _copyToClipboard(String value, String label) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    _showMessage('$label copiado.', isError: false);
+  }
+
+  void _showMessage(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor:
+        isError ? AppColors.error : AppColors.successStrong,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   int _countByCategory(String category) {
@@ -146,6 +217,11 @@ class _DashboardPageState extends State<DashboardPage> {
       default:
         return AppColors.primaryLight;
     }
+  }
+
+  String _maskedPassword(String value) {
+    if (value.isEmpty) return '';
+    return '••••••••••';
   }
 
   Widget _buildCategoryChip({
@@ -288,9 +364,73 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildInfoRow({
+    required String label,
+    required String value,
+    List<Widget>? trailingActions,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            if (trailingActions != null) ...trailingActions,
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionIcon({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildItemCard(VaultItem item) {
     final accent = _categoryAccent(item.category);
     final categoryLabel = _categoryLabel(item.category);
+    final isPasswordItem = item.category == 'passwords';
+    final isPasswordVisible = _visiblePasswords[item.id] ?? false;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -347,73 +487,86 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           if ((item.username ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
-              'USUÁRIO',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
+            _buildInfoRow(
+              label: 'USUÁRIO',
+              value: item.username!,
+              trailingActions: [
+                _buildActionIcon(
+                  icon: Icons.copy_outlined,
+                  onTap: () => _copyToClipboard(item.username!, 'Usuário'),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              item.username!,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
+          ],
+          if (isPasswordItem && (item.password ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildInfoRow(
+              label: 'SENHA',
+              value: isPasswordVisible
+                  ? item.password!
+                  : _maskedPassword(item.password!),
+              trailingActions: [
+                _buildActionIcon(
+                  icon: isPasswordVisible
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  onTap: () {
+                    setState(() {
+                      _visiblePasswords[item.id] = !isPasswordVisible;
+                    });
+                  },
+                ),
+                _buildActionIcon(
+                  icon: Icons.copy_outlined,
+                  onTap: () => _copyToClipboard(item.password!, 'Senha'),
+                ),
+              ],
+            ),
+          ],
+          if (!isPasswordItem && (item.content ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildInfoRow(
+              label: 'CONTEÚDO',
+              value: item.content!,
+              trailingActions: [
+                _buildActionIcon(
+                  icon: Icons.copy_outlined,
+                  onTap: () => _copyToClipboard(item.content!, 'Conteúdo'),
+                ),
+              ],
             ),
           ],
           if ((item.url ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text(
-              'URL',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.url!,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+            _buildInfoRow(
+              label: 'URL',
+              value: item.url!,
             ),
           ],
           if ((item.notes ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text(
-              'NOTAS',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.notes!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+            _buildInfoRow(
+              label: 'NOTAS',
+              value: item.notes!,
             ),
           ],
           const SizedBox(height: 14),
-          Text(
-            'Atualizado em ${item.updatedAt.day.toString().padLeft(2, '0')}/${item.updatedAt.month.toString().padLeft(2, '0')}/${item.updatedAt.year}',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Atualizado em ${item.updatedAt.day.toString().padLeft(2, '0')}/${item.updatedAt.month.toString().padLeft(2, '0')}/${item.updatedAt.year}',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              _buildActionIcon(
+                icon: Icons.delete_outline,
+                onTap: () => _deleteItem(item),
+              ),
+            ],
           ),
         ],
       ),
