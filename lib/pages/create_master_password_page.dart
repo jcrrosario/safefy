@@ -50,6 +50,7 @@ class _CreateMasterPasswordPageState extends State<CreateMasterPasswordPage> {
 
     await MasterPasswordService.saveMasterPassword(password);
     await VaultStateService.setVaultCreated();
+    await VaultStateService.unlockVault();
 
     if (!mounted) return;
 

@@ -4,6 +4,7 @@ import '../core/app_constants.dart';
 import '../widgets/primary_button.dart';
 import '../services/master_password_service.dart';
 import 'dashboard_page.dart';
+import '../services/vault_state_service.dart';
 
 class UnlockVaultPage extends StatefulWidget {
   const UnlockVaultPage({super.key});
@@ -33,6 +34,10 @@ class _UnlockVaultPageState extends State<UnlockVaultPage> {
       _showMessage('Senha mestra inválida.');
       return;
     }
+
+    await VaultStateService.unlockVault();
+
+    if (!mounted) return;
 
     Navigator.pushReplacement(
       context,
