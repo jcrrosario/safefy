@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'core/app_navigator.dart';
 import 'core/app_theme.dart';
 import 'pages/app_entry_page.dart';
+import 'pages/unlock_vault_page.dart';
 import 'services/vault_state_service.dart';
 
 void main() {
@@ -16,6 +18,8 @@ class SafeFyApp extends StatefulWidget {
 }
 
 class _SafeFyAppState extends State<SafeFyApp> with WidgetsBindingObserver {
+  bool _isShowingLockScreen = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,12 +38,35 @@ class _SafeFyAppState extends State<SafeFyApp> with WidgetsBindingObserver {
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       await VaultStateService.lockVault();
+      _isShowingLockScreen = false;
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      final vaultCreated = await VaultStateService.isVaultCreated();
+      final vaultUnlocked = await VaultStateService.isVaultUnlocked();
+
+      if (!vaultCreated || vaultUnlocked || _isShowingLockScreen) {
+        return;
+      }
+
+      final context = AppNavigator.navigatorKey.currentContext;
+      if (context == null) return;
+
+      _isShowingLockScreen = true;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const UnlockVaultPage(),
+        ),
+            (route) => false,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: AppNavigator.navigatorKey,
       title: 'SafeFy',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,

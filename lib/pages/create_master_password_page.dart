@@ -54,11 +54,11 @@ class _CreateMasterPasswordPageState extends State<CreateMasterPasswordPage> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => const DashboardPage(),
       ),
+          (route) => false,
     );
   }
 
