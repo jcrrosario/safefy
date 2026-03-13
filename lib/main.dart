@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/app_theme.dart';
-import 'pages/create_master_password_page.dart';
+import 'pages/app_entry_page.dart';
 
 void main() {
   runApp(const SafeFyApp());
@@ -15,7 +15,7 @@ class SafeFyApp extends StatelessWidget {
       title: 'SafeFy',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const CreateMasterPasswordPage(),
+      home: const AppEntryPage(),
     );
   }
 }

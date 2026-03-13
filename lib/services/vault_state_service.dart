@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VaultStateService {
-  static const _vaultCreatedKey = 'vault_created';
+  static const String _vaultCreatedKey = 'vault_created';
 
   static Future<void> setVaultCreated() async {
     final prefs = await SharedPreferences.getInstance();
