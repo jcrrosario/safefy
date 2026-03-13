@@ -97,6 +97,21 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> _openEditItem(VaultItem item) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NewItemPage(
+          repository: _repository,
+          item: item,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      await _loadItems();
+    }
+  }
+
   Future<void> _deleteItem(VaultItem item) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -403,6 +418,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildActionIcon({
     required IconData icon,
     required VoidCallback onTap,
+    Color? color,
   }) {
     return Padding(
       padding: const EdgeInsets.only(left: 6),
@@ -419,7 +435,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Icon(
             icon,
             size: 18,
-            color: Colors.white,
+            color: color ?? Colors.white,
           ),
         ),
       ),
@@ -563,8 +579,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               _buildActionIcon(
+                icon: Icons.edit_outlined,
+                onTap: () => _openEditItem(item),
+                color: AppColors.primaryLight,
+              ),
+              _buildActionIcon(
                 icon: Icons.delete_outline,
                 onTap: () => _deleteItem(item),
+                color: AppColors.error,
               ),
             ],
           ),
@@ -586,12 +608,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddItem,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-      ),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -718,7 +734,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ? _buildEmptyState()
                   : Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 90),
+                  padding: const EdgeInsets.only(bottom: 24),
                   itemCount: _filteredItems.length,
                   separatorBuilder: (_, __) =>
                   const SizedBox(height: 14),

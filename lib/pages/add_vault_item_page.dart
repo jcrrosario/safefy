@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
+import '../db/app_database.dart';
 import '../repositories/vault_repository.dart';
 
 class NewItemPage extends StatefulWidget {
   final VaultRepository repository;
+  final VaultItem? item;
 
   const NewItemPage({
     super.key,
     required this.repository,
+    this.item,
   });
 
   @override
@@ -21,9 +25,27 @@ class _NewItemPageState extends State<NewItemPage> {
   final _contentController = TextEditingController();
   final _notesController = TextEditingController();
 
-  String _selectedCategory = 'passwords';
+  late String _selectedCategory;
   bool _isSaving = false;
   bool _obscurePassword = true;
+
+  bool get _isEditing => widget.item != null;
+  bool get _isPasswordCategory => _selectedCategory == 'passwords';
+
+  @override
+  void initState() {
+    super.initState();
+
+    final item = widget.item;
+
+    _selectedCategory = item?.category ?? 'passwords';
+    _titleController.text = item?.title ?? '';
+    _usernameController.text = item?.username ?? '';
+    _passwordController.text = item?.password ?? '';
+    _urlController.text = item?.url ?? '';
+    _contentController.text = item?.content ?? '';
+    _notesController.text = item?.notes ?? '';
+  }
 
   @override
   void dispose() {
@@ -49,12 +71,12 @@ class _NewItemPageState extends State<NewItemPage> {
       return;
     }
 
-    if (_selectedCategory == 'passwords' && password.isEmpty) {
+    if (_isPasswordCategory && password.isEmpty) {
       _showMessage('Informe a senha.');
       return;
     }
 
-    if (_selectedCategory != 'passwords' && content.isEmpty) {
+    if (!_isPasswordCategory && content.isEmpty) {
       _showMessage('Informe o conteúdo do item.');
       return;
     }
@@ -63,7 +85,25 @@ class _NewItemPageState extends State<NewItemPage> {
       _isSaving = true;
     });
 
-    final insertedId = await widget.repository.addItem(
+    if (_isEditing) {
+      await widget.repository.updateItem(
+        id: widget.item!.id,
+        title: title,
+        category: _selectedCategory,
+        username: username.isEmpty ? null : username,
+        password: password.isEmpty ? null : password,
+        url: url.isEmpty ? null : url,
+        content: content.isEmpty ? null : content,
+        notes: notes.isEmpty ? null : notes,
+        createdAt: widget.item!.createdAt,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    await widget.repository.addItem(
       title: title,
       category: _selectedCategory,
       username: username.isEmpty ? null : username,
@@ -73,16 +113,27 @@ class _NewItemPageState extends State<NewItemPage> {
       notes: notes.isEmpty ? null : notes,
     );
 
-    debugPrint('Item salvo com ID: $insertedId');
-
     if (!mounted) return;
-
     Navigator.of(context).pop(true);
   }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
     );
   }
 
@@ -101,13 +152,12 @@ class _NewItemPageState extends State<NewItemPage> {
     }
   }
 
-  bool get _isPasswordCategory => _selectedCategory == 'passwords';
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Novo Item'),
+        title: Text(_isEditing ? 'Editar Item' : 'Novo Item'),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -153,10 +203,6 @@ class _NewItemPageState extends State<NewItemPage> {
 
                 setState(() {
                   _selectedCategory = value;
-                  _usernameController.clear();
-                  _passwordController.clear();
-                  _urlController.clear();
-                  _contentController.clear();
                 });
               },
             ),
@@ -237,7 +283,7 @@ class _NewItemPageState extends State<NewItemPage> {
                         height: 22,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                          : const Text('Salvar'),
+                          : Text(_isEditing ? 'Salvar Alterações' : 'Salvar'),
                     ),
                   ),
                 ),

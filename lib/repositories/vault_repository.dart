@@ -44,8 +44,31 @@ class VaultRepository {
     return database.searchVaultItems(query);
   }
 
-  Future<bool> updateItem(VaultItem item) {
-    return database.updateVaultItem(item);
+  Future<bool> updateItem({
+    required int id,
+    required String title,
+    required String category,
+    String? username,
+    String? password,
+    String? url,
+    String? content,
+    String? notes,
+    required DateTime createdAt,
+  }) {
+    return database.updateVaultItem(
+      VaultItem(
+        id: id,
+        title: title,
+        category: category,
+        username: username,
+        password: password,
+        url: url,
+        content: content,
+        notes: notes,
+        createdAt: createdAt,
+        updatedAt: DateTime.now(),
+      ),
+    );
   }
 
   Future<int> deleteItem(int id) {
