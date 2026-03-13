@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../db/database_provider.dart';
+import '../repositories/vault_repository.dart';
 import '../db/app_database.dart';
+import 'add_vault_item_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -9,34 +12,65 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  late final AppDatabase _database;
+
+  late final VaultRepository _repository;
+
+  List<VaultItem> _items = [];
 
   @override
   void initState() {
     super.initState();
-    _database = AppDatabase();
-    _testDatabase();
+    _repository = VaultRepository(DatabaseProvider.instance);
+    _loadItems();
   }
 
-  Future<void> _testDatabase() async {
-    final items = await _database.getAllVaultItems();
-    debugPrint('Itens no cofre: ${items.length}');
+  Future<void> _loadItems() async {
+
+    final items = await _repository.getAllItems();
+
+    setState(() {
+      _items = items;
+    });
   }
 
-  @override
-  void dispose() {
-    _database.close();
-    super.dispose();
+  Future<void> _openAddItem() async {
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AddVaultItemPage(),
+      ),
+    );
+
+    if (result == true) {
+      _loadItems();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'Dashboard SafeFy',
-          style: TextStyle(fontSize: 24),
-        ),
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("SafeFy"),
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddItem,
+        child: const Icon(Icons.add),
+      ),
+
+      body: ListView.builder(
+        itemCount: _items.length,
+        itemBuilder: (context, index) {
+
+          final item = _items[index];
+
+          return ListTile(
+            title: Text(item.title),
+            subtitle: Text(item.username ?? ""),
+          );
+        },
       ),
     );
   }
