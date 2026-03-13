@@ -47,7 +47,7 @@ class _UnlockVaultPageState extends State<UnlockVaultPage> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => const DashboardPage(),
+        builder: (_) => DashboardPage(),
       ),
           (route) => false,
     );

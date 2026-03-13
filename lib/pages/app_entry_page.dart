@@ -50,7 +50,7 @@ class _AppEntryPageState extends State<AppEntryPage> {
     }
 
     if (_vaultUnlocked) {
-      return const DashboardPage();
+      DashboardPage();
     }
 
     return const UnlockVaultPage();
