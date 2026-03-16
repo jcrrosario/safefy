@@ -1,4 +1,4 @@
-name: safefy
+name: SafeFy
 description: "Cofre digital seguro para armazenamento de credenciais."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
@@ -22,7 +22,8 @@ dependencies:
     shared_preferences: ^2.2.3
 
 dev_dependencies:
-
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
   flutter_test:
     sdk: flutter
 
@@ -34,3 +35,21 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo-app.png"
+  min_sdk_android: 21
+
+  adaptive_icon_background: "#121417"
+  adaptive_icon_foreground: "assets/images/logo-app.png"
+
+flutter_native_splash:
+  color: "#0A1219"
+  image: assets/images/splash.png
+  android: true
+  ios: true
+  android_12:
+    color: "#0A1219"
+    image: assets/images/splash.png
