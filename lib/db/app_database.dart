@@ -55,6 +55,12 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteVaultItemById(int id) {
     return (delete(vaultItems)..where((tbl) => tbl.id.equals(id))).go();
   }
+
+  Future<int> deleteAllVaultItems() {
+    return delete(vaultItems).go();
+  }
+
+
 }
 
 LazyDatabase _openConnection() {
@@ -64,3 +70,4 @@ LazyDatabase _openConnection() {
     return NativeDatabase.createInBackground(file);
   });
 }
+

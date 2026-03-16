@@ -35,12 +35,17 @@ class _SafeFyAppState extends State<SafeFyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (VaultLockService.isAutoLockSuspended()) {
+      return;
+    }
+
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       await VaultStateService.lockVault();
       VaultLockService.clearCurrentMasterPassword();
       _isShowingLockScreen = false;
+      return;
     }
 
     if (state == AppLifecycleState.resumed) {

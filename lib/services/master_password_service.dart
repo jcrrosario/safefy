@@ -62,9 +62,20 @@ class MasterPasswordService {
 
     final salt = base64Decode(saltBase64);
 
+    return deriveKeyFromPasswordAndSalt(
+      password: password,
+      salt: salt,
+    );
+  }
+
+  static Future<List<int>> deriveKeyFromPasswordAndSalt({
+    required String password,
+    required List<int> salt,
+    int iterations = 210000,
+  }) async {
     final algorithm = Pbkdf2(
       macAlgorithm: Hmac.sha256(),
-      iterations: 100000,
+      iterations: iterations,
       bits: 256,
     );
 
@@ -74,5 +85,10 @@ class MasterPasswordService {
     );
 
     return await secretKey.extractBytes();
+  }
+
+  static List<int> generateRandomBytes(int length) {
+    final random = Random.secure();
+    return List<int>.generate(length, (_) => random.nextInt(256));
   }
 }

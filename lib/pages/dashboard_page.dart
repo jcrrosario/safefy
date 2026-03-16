@@ -5,6 +5,7 @@ import '../db/app_database.dart';
 import '../db/database_provider.dart';
 import '../repositories/vault_repository.dart';
 import 'add_vault_item_page.dart';
+import 'manual_sync_page.dart';
 
 class DashboardPage extends StatefulWidget {
   DashboardPage({super.key});
@@ -38,6 +39,18 @@ class _DashboardPageState extends State<DashboardPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openManualSync() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ManualSyncPage(),
+      ),
+    );
+
+    if (result == true) {
+      await _loadItems();
+    }
   }
 
   Future<void> _loadItems() async {
@@ -643,37 +656,56 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF123C2D),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: const Color(0xFF1F7A59),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.lock_outline,
-                          size: 14,
-                          color: Color(0xFF4ADE80),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Criptografado',
-                          style: TextStyle(
-                            color: Color(0xFFB7F7CB),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF123C2D),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: const Color(0xFF1F7A59),
                           ),
                         ),
-                      ],
-                    ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.lock_outline,
+                              size: 14,
+                              color: Color(0xFF4ADE80),
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Criptografado',
+                              style: TextStyle(
+                                color: Color(0xFFB7F7CB),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: IconButton(
+                          onPressed: _openManualSync,
+                          icon: const Icon(
+                            Icons.sync_outlined,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

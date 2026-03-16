@@ -43,6 +43,8 @@ class VaultRepository {
     String? url,
     String? content,
     String? notes,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) async {
     final now = DateTime.now();
     final key = await _getSessionKey();
@@ -59,8 +61,8 @@ class VaultRepository {
         url: Value(await _encryptNullable(url, key)),
         content: Value(await _encryptNullable(content, key)),
         notes: Value(await _encryptNullable(notes, key)),
-        createdAt: now,
-        updatedAt: now,
+        createdAt: createdAt ?? now,
+        updatedAt: updatedAt ?? now,
       ),
     );
   }
@@ -143,5 +145,96 @@ class VaultRepository {
 
   Future<int> deleteItem(int id) {
     return database.deleteVaultItemById(id);
+  }
+
+  Future<void> clearAllItems() async {
+    await database.deleteAllVaultItems();
+  }
+
+  Future<List<Map<String, dynamic>>> exportItemsAsMap() async {
+    final items = await getAllItems();
+
+    return items.map((item) {
+      return {
+        'title': item.title,
+        'category': item.category,
+        'username': item.username,
+        'password': item.password,
+        'url': item.url,
+        'content': item.content,
+        'notes': item.notes,
+        'createdAt': item.createdAt.toIso8601String(),
+        'updatedAt': item.updatedAt.toIso8601String(),
+      };
+    }).toList();
+  }
+
+  Future<int> replaceAllItemsFromMap(List<dynamic> items) async {
+    if (items.isEmpty) {
+      throw Exception('Nenhum item encontrado no backup.');
+    }
+
+    final validatedItems = <Map<String, dynamic>>[];
+
+    for (final raw in items) {
+      if (raw is! Map) {
+        throw Exception('Backup contém item inválido.');
+      }
+
+      final map = Map<String, dynamic>.from(raw);
+
+      final title = map['title'];
+      final category = map['category'];
+
+      if (title is! String || title.trim().isEmpty) {
+        throw Exception('Um item do backup está sem título válido.');
+      }
+
+      if (category is! String || category.trim().isEmpty) {
+        throw Exception('Um item do backup está sem categoria válida.');
+      }
+
+      validatedItems.add(map);
+    }
+
+    final key = await _getSessionKey();
+    int restoredCount = 0;
+
+    await database.transaction(() async {
+      await database.deleteAllVaultItems();
+
+      for (final map in validatedItems) {
+        final now = DateTime.now();
+
+        final createdAtRaw = map['createdAt'];
+        final updatedAtRaw = map['updatedAt'];
+
+        final createdAt =
+        createdAtRaw is String ? DateTime.tryParse(createdAtRaw) : null;
+        final updatedAt =
+        updatedAtRaw is String ? DateTime.tryParse(updatedAtRaw) : null;
+
+        await database.insertVaultItem(
+          VaultItemsCompanion.insert(
+            title: await CryptoService.encryptText(
+              plainText: map['title'] as String,
+              keyBytes: key,
+            ),
+            category: map['category'] as String,
+            username: Value(await _encryptNullable(map['username'] as String?, key)),
+            password: Value(await _encryptNullable(map['password'] as String?, key)),
+            url: Value(await _encryptNullable(map['url'] as String?, key)),
+            content: Value(await _encryptNullable(map['content'] as String?, key)),
+            notes: Value(await _encryptNullable(map['notes'] as String?, key)),
+            createdAt: createdAt ?? now,
+            updatedAt: updatedAt ?? now,
+          ),
+        );
+
+        restoredCount++;
+      }
+    });
+
+    return restoredCount;
   }
 }
